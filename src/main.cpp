@@ -1,56 +1,93 @@
 #include <Arduino.h>
 #include <Servo.h>
 
-#define SERVO_1_PIN   4
-#define SERVO_2_PIN   12
-#define SERVO_3_PIN   14
-#define SERVO_4_PIN   15
+#define SERVO_1_PIN         4
+#define SERVO_2_PIN         12
+#define SERVO_3_PIN         14
+#define SERVO_4_PIN         15
+
+#define PICKER_OPEN_LIMIT   50
+#define PICKER_CLOSE_LIMIT  25
+#define TURN_LEFT_LIMIT     180
+#define TURN_RIGHT_LIMIT    0
+#define APPROACH_LIMIT      148
+#define ESTRAY_LIMIT        29 
+#define LIFT_UP_LIMIT       174
+#define LET_DOWN_LIMIT      69
+
+#define MOVE_STEP           5
 
 #define BAUDRATE      115200
 
-uint8_t m1, m2, m3, m4;
+uint8_t m1; /* picker */
+uint8_t m2; /* lift */
+uint8_t m3; /* approach */
+uint8_t m4; /* yaw */
 
 Servo s1, s2, s3, s4;
+
+void open_picker();
+void close_picker();
+
+void turn_left();
+void turn_right();
+
+void approach();
+void estrange();
+
+void lift_up();
+void let_down();
 
 char buf[128];
 
 void setup() {
     Serial.begin(BAUDRATE);
 
+    /*   */
     s1.attach(SERVO_1_PIN);
     s2.attach(SERVO_2_PIN);
     s3.attach(SERVO_3_PIN);
     s4.attach(SERVO_4_PIN);
 
-    m1 = m2 = m3 = m4 = 0;
+
+    /* 23, 55, 69, 75 */
+    m1 = 26;
+    m2 = 100;
+    m3 = 27;
+    m4 = 79;
+
+    s1.write(m1);
+    s2.write(m2);
+    s3.write(m3);
+    s4.write(m4);
 }
 
 void loop() {
     if (Serial.available()) {
         switch (Serial.read()) {
             case 'q':
-                s1.write(++m1);
+                open_picker();
                 break;
             case 'w':
-                s1.write(--m1);
+                close_picker();
                 break;
             case 'a':
-                s2.write(++m2);
+                turn_left();
                 break;
             case 's':
-                s2.write(--m2);
+                turn_right();
                 break;
             case 'z':
-                s3.write(++m3);
+                approach();
                 break;
             case 'x':
-                s3.write(--m3);
+                estrange();
                 break;
             case 'c':
-                s4.write(++m4);
+                lift_up();
                 break;
             case 'v':
-                s4.write(++m4);
+                let_down();
                 break;
             default:
               break;
@@ -58,5 +95,61 @@ void loop() {
 
         sprintf(buf, "m1 : %d, m2 : %d, m3 : %d, m4 : %d\r\n", m1, m2, m3, m4);
         Serial.print(buf);
+    }
+}
+
+void open_picker() {
+    if (m1 + MOVE_STEP <= PICKER_OPEN_LIMIT) {
+        m1 += MOVE_STEP;
+        s1.write(m1);
+    }
+}
+
+void close_picker() {
+    if (m1 - MOVE_STEP >= PICKER_CLOSE_LIMIT) {
+        m1 -= MOVE_STEP;
+        s1.write(m1);
+    }
+}
+
+void turn_left() {
+    if (m4 + MOVE_STEP <= TURN_LEFT_LIMIT) {
+        m4 += MOVE_STEP;
+        s4.write(m4);
+    }
+}
+
+void turn_right() {
+    if (m4 - MOVE_STEP >= TURN_RIGHT_LIMIT) {
+        m4 -= MOVE_STEP;
+        s4.write(m4);
+    }
+}
+
+void approach() {
+    if (m3 + MOVE_STEP <= APPROACH_LIMIT) {
+        m3 += MOVE_STEP;
+        s3.write(m3);
+    }
+}
+
+void estrange() {
+    if (m3 - MOVE_STEP >= ESTRAY_LIMIT) {
+        m3 -= MOVE_STEP;
+        s3.write(m3);
+    }
+}
+
+void lift_up() {
+    if (m2 - MOVE_STEP <= LIFT_UP_LIMIT) {
+        m2 += MOVE_STEP;
+        s2.write(m2);
+    }
+}
+
+void let_down() {
+    if (m2 - MOVE_STEP >= LET_DOWN_LIMIT) {
+        m2 -= MOVE_STEP;
+        s2.write(m2);
     }
 }
