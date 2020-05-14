@@ -1,6 +1,12 @@
 #include <Arduino.h>
 #include <Servo.h>
 
+#include <ESP8266WiFi.h>
+#include <ESPAsyncUDP.h>
+
+#define WIFI_SSID           "ISRcomunicaciones34"
+#define WIFI_PASSWORD       "16818019"
+
 #define SERVO_1_PIN         4
 #define SERVO_2_PIN         12
 #define SERVO_3_PIN         14
@@ -18,6 +24,8 @@
 #define MOVE_STEP           5
 
 #define BAUDRATE      115200
+
+AsyncUDP udp;
 
 uint8_t m1; /* picker */
 uint8_t m2; /* lift */
@@ -60,42 +68,85 @@ void setup() {
     s2.write(m2);
     s3.write(m3);
     s4.write(m4);
+
+    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+ 
+    while (WiFi.status() != WL_CONNECTED) {
+        delay(1000);
+        Serial.println("Connecting to WiFi..");
+    }
+    Serial.println(WiFi.localIP());
+
+    if(udp.listen(1234)) {
+        Serial.print("UDP Listening on IP: ");
+        Serial.println(WiFi.localIP());
+        udp.onPacket([](AsyncUDPPacket packet) {
+            switch (packet.data()[0]) {
+                case 'q':
+                    open_picker();
+                    break;
+                case 'w':
+                    close_picker();
+                    break;
+                case 'a':
+                    turn_left();
+                    break;
+                case 's':
+                    turn_right();
+                    break;
+                case 'z':
+                    approach();
+                    break;
+                case 'x':
+                    estrange();
+                    break;
+                case 'c':
+                    lift_up();
+                    break;
+                case 'v':
+                    let_down();
+                    break;
+                default:
+                break;
+            }
+        });
+    }
 }
 
 void loop() {
-    if (Serial.available()) {
-        switch (Serial.read()) {
-            case 'q':
-                open_picker();
-                break;
-            case 'w':
-                close_picker();
-                break;
-            case 'a':
-                turn_left();
-                break;
-            case 's':
-                turn_right();
-                break;
-            case 'z':
-                approach();
-                break;
-            case 'x':
-                estrange();
-                break;
-            case 'c':
-                lift_up();
-                break;
-            case 'v':
-                let_down();
-                break;
-            default:
-              break;
-        }
+    // if (Serial.available()) {
+    //     switch (Serial.read()) {
+    //         case 'q':
+    //             open_picker();
+    //             break;
+    //         case 'w':
+    //             close_picker();
+    //             break;
+    //         case 'a':
+    //             turn_left();
+    //             break;
+    //         case 's':
+    //             turn_right();
+    //             break;
+    //         case 'z':
+    //             approach();
+    //             break;
+    //         case 'x':
+    //             estrange();
+    //             break;
+    //         case 'c':
+    //             lift_up();
+    //             break;
+    //         case 'v':
+    //             let_down();
+    //             break;
+    //         default:
+    //           break;
+    //     }
 
-        sprintf(buf, "m1 : %d, m2 : %d, m3 : %d, m4 : %d\r\n", m1, m2, m3, m4);
-        Serial.print(buf);
-    }
+    //     sprintf(buf, "m1 : %d, m2 : %d, m3 : %d, m4 : %d\r\n", m1, m2, m3, m4);
+    //     Serial.print(buf);
+    // }
 }
 
 void open_picker() {
